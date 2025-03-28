@@ -4,46 +4,39 @@ import './style.css';
 const uploadButton = document.getElementById('uploadButton');
 const fileInput = document.getElementById('fileInput');
 
-// "State" variable to track selected file
-let selectedFile = null;
-
 uploadButton.addEventListener('click', () => {
   fileInput.click();
 });
 
-fileInput.addEventListener('change', (event) => {
-  const file = event.target.files[0];
+fileInput.addEventListener('change', (event) => { //trigger when file is selected
+  const file = event.target.files[0]; // Get the selected file, 0 refres to the first file in the list
   if (file) {
-    selectedFile = file;
-
-    // Immediately upload after file selection (or trigger another button if you prefer)
-    uploadFile(file);
+    console.log(`File selected: ${file.name}`);
+    uploadFile(file); // Immediately upload after file selection 
   }
 });
 
 function uploadFile(file) {
-  const formData = new FormData();
-  formData.append('file', file);
+  const formData = new FormData(); // browser API for handling form data
+  formData.append('file', file); // builds request mimicing a form submission, with key 'file' and value as the file object
 
-  // Optionally show a loading indicator here
-
-  fetch('/upload', {
-    method: 'POST',
-    body: formData
+  fetch('http://localhost:5000/upload', { //defines the path to the server endpoint
+    method: 'POST', //posting data to the server
+    body: formData // represents the form data
   })
     .then(async (response) => {
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`Server error: ${errorText}`);
       }
-      return response.blob(); // assuming the backend returns the new Excel file
+      return response.blob(); // reads the binary content (like an Excel file)
     })
     .then((blob) => {
       // Create a download link
       const downloadUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = downloadUrl;
-      link.download = 'updated_template.xlsx'; // or a dynamic name from response
+      link.download = 'updated_template.xlsm'; // todo- customize
       document.body.appendChild(link);
       link.click();
       link.remove();
