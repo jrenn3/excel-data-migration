@@ -70,10 +70,6 @@ def upload():
 
         print('DEVNOTE Assets data migrated successfully')
 
-    except Exception as e:
-        print(f"Error migrating assets data: {str(e)}")
-        raise
-
         # Save output file
         output_path = tempfile.mktemp(suffix='.xlsm')
         wb_new.save(output_path)
