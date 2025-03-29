@@ -38,7 +38,7 @@ def upload():
         user_name = ws_old['A1'].value # if 'A1' in ws_old else 'Anonymous'
 
         # Load blank template to populate
-        template_path = 'public/TEST_DRAFT_TEMPLATE_FUNdsForecast_ByMoe_v6_2025_03_27.xlsm'  # pre-saved new version
+        template_path = 'TEST_DRAFT_TEMPLATE_FUNdsForecast_ByMoe_v6_2025_03_27.xlsm'  # pre-saved new version
         wb_new = load_workbook(template_path, keep_vba=True)
         ws_new = wb_new.active
 
