@@ -64,8 +64,8 @@ def upload():
         print('DEVNOTE Assets tab found in new workbook')
 
         # Example: Copy data from the first 10 rows and 5 columns
-        for row in range(3, 99):  # Adjust range as needed
-            for col in range(2, 6):  # Adjust range as needed
+        for row in range(3, 99):  
+            for col in range(2, 6):  # from column B to E, range end is exclusive
                 assets_sheet_new.cell(row=row, column=col).value = assets_sheet_old.cell(row=row, column=col).value
 
         print('DEVNOTE Assets data migrated successfully')
