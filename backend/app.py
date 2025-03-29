@@ -50,7 +50,7 @@ def upload():
         ws_new['A1'] = user_name  # Assuming B2 is where user's name goes in the new version
 
         # Migrate assets data
-        migrate_assets_tab(ws_old, ws_new)
+        migrate_assets_tab(wb_old, wb_new)
 
         # Save output file
         output_path = tempfile.mktemp(suffix='.xlsm')
@@ -71,20 +71,35 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))  # fallback to 5000 for local dev
     app.run(host='0.0.0.0', port=port)
 
-def migrate_assets_tab(ws_old, ws_new):
+def migrate_assets_tab(wb_old, wb_new):
 
     try:
         # Locate the 'Assets' tab in the old workbook
-        assets_sheet = ws_old if ws_old.title == 'Assets' else None
-        if not assets_sheet:
+        assets_sheet_old = None
+        for sheet in wb_old.worksheets:
+            if sheet.title == 'Assets':
+                assets_sheet_old = sheet
+                break
+        if not assets_sheet_old:
             raise ValueError("No 'Assets' tab found in the uploaded workbook.")
 
         print('DEVNOTE Assets tab found')
+        
+        # Locate the 'Assets' tab in the new workbook
+        assets_sheet_new = None
+        for sheet in wb_new.worksheets:
+            if sheet.title == 'Assets':
+                assets_sheet_new = sheet
+                break
+        if not assets_sheet_new:
+            raise ValueError("No 'Assets' tab found in the new workbook.")
+
+        print('DEVNOTE Assets tab found in new workbook')
 
         # Example: Copy data from the first 10 rows and 5 columns
         for row in range(3, 99):  # Adjust range as needed
             for col in range(2, 5):  # Adjust range as needed
-                ws_new.cell(row=row, column=col).value = assets_sheet.cell(row=row, column=col).value
+                assets_sheet_new.cell(row=row, column=col).value = assets_sheet_old.cell(row=row, column=col).value
 
         print('DEVNOTE Assets data migrated successfully')
 
