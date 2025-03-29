@@ -38,7 +38,9 @@ def upload():
         user_name = ws_old['A1'].value # if 'A1' in ws_old else 'Anonymous'
 
         # Load blank template to populate
-        template_path = '*.xlsm'  # pre-saved new version
+        template_path = next((f for f in os.listdir('.') if f.endswith('.xlsm')), None)
+        if not template_path:
+            raise FileNotFoundError("No .xlsm template file found in the current directory.")
         wb_new = load_workbook(template_path, keep_vba=True)
         ws_new = wb_new.active
 
