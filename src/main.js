@@ -20,7 +20,7 @@ function uploadFile(file) {
   const formData = new FormData(); // browser API for handling form data
   formData.append('file', file); // builds request mimicing a form submission, with key 'file' and value as the file object
 
-  fetch('http://localhost:5000/upload', { //defines the path to the server endpoint
+  fetch('http://localhost:5000/upload', { //defines the path to the server endpoint TODO-change to actual server
     method: 'POST', //posting data to the server
     body: formData // represents the form data
   })
