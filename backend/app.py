@@ -8,6 +8,7 @@ app = Flask(__name__)
 CORS(app)
 
 @app.route('/upload', methods=['POST']) # creates endpoint for file upload
+
 def upload():
 
     print('DEVNOTE endpoint hit')
@@ -28,52 +29,18 @@ def upload():
     print('DEVNOTE temp file saved')
 
     # TRANSFORMATION LOGIC - currently a mockup
+
     try:
-
         print('DEVNOTE transformation logic started')
-
-        # Load uploaded file and extract user inputs
         wb_old = load_workbook(uploaded_path)
-        ws_old = wb_old.active
-        user_name = ws_old['A1'].value # if 'A1' in ws_old else 'Anonymous'
-
-        # Load blank template to populate
         template_path = next((f for f in os.listdir('.') if f.endswith('.xlsm')), None)
         if not template_path:
             raise FileNotFoundError("No .xlsm template file found in the current directory.")
+        
         wb_new = load_workbook(template_path, keep_vba=True)
-        ws_new = wb_new.active
-
+        
         print('DEVNOTE template loaded')
-
-        # Insert user data (mock)
-        ws_new['A1'] = user_name  # Assuming B2 is where user's name goes in the new version
-
-        # Migrate assets data
-        migrate_assets_tab(wb_old, wb_new)
-
-        # Save output file
-        output_path = tempfile.mktemp(suffix='.xlsm')
-        wb_new.save(output_path)
-
-        print('DEVNOTE output file saved')
-
-        return send_file(output_path,
-                         as_attachment=True,
-                         download_name='updated_template.xlsm',
-                         mimetype='application/vnd.ms-excel.sheet.macroEnabled.12')
-    except Exception as e:
-        return f'Error processing file: {str(e)}', 500
-    finally:
-        os.unlink(uploaded_path)
-
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))  # fallback to 5000 for local dev
-    app.run(host='0.0.0.0', port=port)
-
-def migrate_assets_tab(wb_old, wb_new):
-
-    try:
+                
         # Locate the 'Assets' tab in the old workbook
         assets_sheet_old = None
         for sheet in wb_old.worksheets:
@@ -106,3 +73,22 @@ def migrate_assets_tab(wb_old, wb_new):
     except Exception as e:
         print(f"Error migrating assets data: {str(e)}")
         raise
+
+        # Save output file
+        output_path = tempfile.mktemp(suffix='.xlsm')
+        wb_new.save(output_path)
+
+        print('DEVNOTE output file saved')
+
+        return send_file(output_path,
+                         as_attachment=True,
+                         download_name='updated_template.xlsm',
+                         mimetype='application/vnd.ms-excel.sheet.macroEnabled.12')
+    except Exception as e:
+        return f'Error processing file: {str(e)}', 500
+    finally:
+        os.unlink(uploaded_path)
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))  # fallback to 5000 for local dev
+    app.run(host='0.0.0.0', port=port)
