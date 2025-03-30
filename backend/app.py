@@ -1,6 +1,7 @@
 from flask import Flask, request, send_file, jsonify
 from openpyxl import load_workbook
 from openpyxl.worksheet.datavalidation import DataValidation
+from openpyxl.worksheet.formula import ArrayFormula
 import tempfile
 import os
 from flask_cors import CORS
@@ -21,8 +22,8 @@ def copy_data(source_sheet, target_sheet, start_row, end_row, start_col, end_col
             new_cell = target_sheet.cell(row=row, column=col)
             
             # Check for the custom named formula and replace it
-            if old_cell.value == 'EndDayOfCurrentMonth':
-                new_cell.value = 'EndOfCurrentMonth'
+            if isinstance(old_cell.value, ArrayFormula) and old_cell.value.text == '=EndDayOfCurrentMonth':
+                new_cell.value = '=EndOfCurrentMonth'
             else:
                 new_cell.value = old_cell.value
                         
@@ -77,9 +78,6 @@ def upload():
         
         ws_old = locate_sheet(wb_old, 'Assets')
         ws_new = locate_sheet(wb_new, 'Assets')
-
-        print('DEVNOTE copying Assets data')
-
         copy_data(ws_old, ws_new, 3, 99, 2, 5)
 
         apply_data_validation(
@@ -90,24 +88,25 @@ def upload():
 
         print('DEVNOTE Assets data migrated successfully')
 
-
         #--CREDIT CARDS TAB--        
         ws_old = locate_sheet(wb_old, 'Credit Cards')
         ws_new = locate_sheet(wb_new, 'Credit Cards')
-
-        print('DEVNOTE copying Credit Cards data')
-
         copy_data(ws_old, ws_new, 3, 24, 2, 6)
 
         print('DEVNOTE Credit Cards data migrated successfully')
 
-        # Save output file
+        #--PLANNED TAB--
+        ws_old = locate_sheet(wb_old, 'Planned')
+        ws_new = locate_sheet(wb_new, 'Planned')
+        copy_data(ws_old, ws_new, 3, 24, 2, 6)
+
+        print('DEVNOTE Planned data migrated successfully')
+
+        #--SAVE AND DELIVER FILE--
         output_path = tempfile.mktemp(suffix='.xlsm')
         wb_new.save(output_path)
 
         print('DEVNOTE output file saved')
-
-        #--DELIVER FILE--
 
         return send_file(output_path,
                          as_attachment=True,
