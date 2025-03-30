@@ -19,7 +19,13 @@ def copy_data(source_sheet, target_sheet, start_row, end_row, start_col, end_col
         for col in range(start_col, end_col + 1):
             old_cell = source_sheet.cell(row=row, column=col)
             new_cell = target_sheet.cell(row=row, column=col)
-            new_cell.value = old_cell.value
+            
+            # Check for the custom named formula and replace it
+            if old_cell.value == 'EndDayOfCurrentMonth':
+                new_cell.value = 'EndOfCurrentMonth'
+            else:
+                new_cell.value = old_cell.value
+                        
             new_cell.number_format = old_cell.number_format # copy old number format over
 
 def apply_data_validation(sheet, validation_range, source_range):
