@@ -20,7 +20,12 @@ function uploadFile(file) {
   const formData = new FormData(); // browser API for handling form data
   formData.append('file', file); // builds request mimicing a form submission, with key 'file' and value as the file object
 
-  fetch('https://excel-data-migration-backend.onrender.com/upload', { //defines the path to the server endpoint TODO-change to actual server
+  const serverUrl = 
+    window.location.hostname === 'localhost' // check if the app is running on localhost
+      ? 'http://localhost:5000/upload' // local server URL
+      : 'https://excel-data-migration-backend.onrender.com/upload'; // production server URL
+
+  fetch(serverUrl, { //defines the path to the server endpoint
     method: 'POST', //posting data to the server
     body: formData // represents the form data
   })
