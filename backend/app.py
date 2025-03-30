@@ -67,22 +67,33 @@ def upload():
     try:
         print('DEVNOTE transformation logic started')
 
-        assets_sheet_old = locate_sheet(wb_old, 'Assets')
-        assets_sheet_new = locate_sheet(wb_new, 'Assets')
+        #--ASSETS TAB--
+        
+        ws_old = locate_sheet(wb_old, 'Assets')
+        ws_new = locate_sheet(wb_new, 'Assets')
 
         print('DEVNOTE copying Assets data')
 
-        copy_data(assets_sheet_old, assets_sheet_new, 3, 99, 2, 5)
-
-        print('DEVNOTE applying data validation')
+        copy_data(ws_old, ws_new, 3, 99, 2, 5)
 
         apply_data_validation(
-            assets_sheet_new,
-            validation_range="$B$4:$B$99",
-            source_range="'Data Validation'!$A$2:$A$99" # todo define these and name each range
+            ws_new,
+            "$B$4:$B$99",
+            "'Data Validation'!$A$2:$A$99" # todo define these and name each range
         )
 
         print('DEVNOTE Assets data migrated successfully')
+
+
+        #--CREDIT CARDS TAB--        
+        ws_old = locate_sheet(wb_old, 'Credit Cards')
+        ws_new = locate_sheet(wb_new, 'Credit Cards')
+
+        print('DEVNOTE copying Credit Cards data')
+
+        copy_data(ws_old, ws_new, 3, 24, 2, 6)
+
+        print('DEVNOTE Credit Cards data migrated successfully')
 
         # Save output file
         output_path = tempfile.mktemp(suffix='.xlsm')
