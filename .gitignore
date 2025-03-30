@@ -13,6 +13,7 @@ dist-ssr
 *.local
 .venv
 DOCUMENTATION.md
+backend/~$TEST_TEMPLATE_DEV_DRAFT_FUNdsForecast_ByMoe_v6_2025_03_29_1030.xlsm
 
 # Editor directories and files
 .vscode/*

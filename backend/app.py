@@ -1,5 +1,6 @@
 from flask import Flask, request, send_file, jsonify
 from openpyxl import load_workbook
+from openpyxl.worksheet.datavalidation import DataValidation
 import tempfile
 import os
 from flask_cors import CORS
@@ -28,7 +29,7 @@ def upload():
 
     print('DEVNOTE temp file saved')
 
-    # TRANSFORMATION LOGIC - currently a mockup
+    # TRANSFORMATION LOGIC
 
     try:
         print('DEVNOTE transformation logic started')
@@ -61,12 +62,32 @@ def upload():
         if not assets_sheet_new:
             raise ValueError("No 'Assets' tab found in the new workbook.")
 
-        print('DEVNOTE Assets tab found in new workbook')
+        print('DEVNOTE copying Assets data')
 
         # Example: Copy data from the first 10 rows and 5 columns
         for row in range(3, 99):  
             for col in range(2, 6):  # from column B to E, range end is exclusive
-                assets_sheet_new.cell(row=row, column=col).value = assets_sheet_old.cell(row=row, column=col).value
+                old_cell = assets_sheet_old.cell(row=row, column=col)
+                new_cell = assets_sheet_new.cell(row=row, column=col)
+                new_cell.value = old_cell.value  # Copy value
+                new_cell.number_format = old_cell.number_format  # Copy number format
+
+        print('DEVNOTE applying data validation')
+
+        # Define the data validation rule
+        data_validation = DataValidation(
+            type="list",
+            formula1="'Data Validation'!$A$2:$A$99",  # Reference to the source range
+            allow_blank=True,
+            showDropDown=False,
+            showErrorMessage=True
+        )
+
+        # Add the data validation to the range B4:B99
+        data_validation.add("B4:B99")
+
+        # Apply the data validation to the new sheet
+        assets_sheet_new.add_data_validation(data_validation)
 
         print('DEVNOTE Assets data migrated successfully')
 
