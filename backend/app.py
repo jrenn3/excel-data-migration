@@ -8,11 +8,26 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
-@app.route('/upload', methods=['POST']) # creates endpoint for file upload
+def locate_sheet(workbook, sheet_name):
+    for sheet in workbook.worksheets:
+        if sheet.title == sheet_name:
+            return sheet
+    raise ValueError(f"No '{sheet_name}' tab found in {workbook}.")
 
+def copy_data(source_sheet, target_sheet, start_row, end_row, start_col, end_col):
+    for row in range(start_row, end_row + 1):
+        for col in range(start_col, end_col + 1):
+            old_cell = source_sheet.cell(row=row, column=col)
+            new_cell = target_sheet.cell(row=row, column=col)
+            new_cell.value = old_cell.value
+            new_cell.number_format = old_cell.number_format
+
+@app.route('/upload', methods=['POST']) # creates endpoint for file upload
 def upload():
 
     print('DEVNOTE endpoint hit')
+
+    #--LOAD WORKBOOK--
 
     #check if the file was sent correctly
     if 'file' not in request.files: # grabs file from the request via the key 'file'
@@ -27,50 +42,26 @@ def upload():
         file.save(tmp.name)
         uploaded_path = tmp.name
 
-    print('DEVNOTE temp file saved')
+    wb_old = load_workbook(uploaded_path)
+    template_path = next((f for f in os.listdir('.') if f.endswith('.xlsm')), None) # loads the template file via extention search
+    if not template_path:
+        raise FileNotFoundError("No .xlsm template file found in the current directory.")
+    
+    wb_new = load_workbook(template_path, keep_vba=True)
+        
+    print('DEVNOTE template loaded')
 
-    # TRANSFORMATION LOGIC
+    #--MIGRATION LOGIC--
 
     try:
         print('DEVNOTE transformation logic started')
-        wb_old = load_workbook(uploaded_path)
-        template_path = next((f for f in os.listdir('.') if f.endswith('.xlsm')), None)
-        if not template_path:
-            raise FileNotFoundError("No .xlsm template file found in the current directory.")
-        
-        wb_new = load_workbook(template_path, keep_vba=True)
-        
-        print('DEVNOTE template loaded')
-                
-        # Locate the 'Assets' tab in the old workbook
-        assets_sheet_old = None
-        for sheet in wb_old.worksheets:
-            if sheet.title == 'Assets':
-                assets_sheet_old = sheet
-                break
-        if not assets_sheet_old:
-            raise ValueError("No 'Assets' tab found in the uploaded workbook.")
 
-        print('DEVNOTE Assets tab found')
-        
-        # Locate the 'Assets' tab in the new workbook
-        assets_sheet_new = None
-        for sheet in wb_new.worksheets:
-            if sheet.title == 'Assets':
-                assets_sheet_new = sheet
-                break
-        if not assets_sheet_new:
-            raise ValueError("No 'Assets' tab found in the new workbook.")
+        assets_sheet_old = locate_sheet(wb_old, 'Assets')
+        assets_sheet_new = locate_sheet(wb_new, 'Assets')
 
         print('DEVNOTE copying Assets data')
 
-        # Example: Copy data from the first 10 rows and 5 columns
-        for row in range(3, 99):  
-            for col in range(2, 6):  # from column B to E, range end is exclusive
-                old_cell = assets_sheet_old.cell(row=row, column=col)
-                new_cell = assets_sheet_new.cell(row=row, column=col)
-                new_cell.value = old_cell.value  # Copy value
-                new_cell.number_format = old_cell.number_format  # Copy number format
+        copy_data(assets_sheet_old, assets_sheet_new, 3, 99, 2, 5)
 
         print('DEVNOTE applying data validation')
 
@@ -101,8 +92,10 @@ def upload():
                          as_attachment=True,
                          download_name='updated_template.xlsm',
                          mimetype='application/vnd.ms-excel.sheet.macroEnabled.12')
+    
     except Exception as e:
         return f'Error processing file: {str(e)}', 500
+    
     finally:
         os.unlink(uploaded_path)
 
