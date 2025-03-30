@@ -20,7 +20,18 @@ def copy_data(source_sheet, target_sheet, start_row, end_row, start_col, end_col
             old_cell = source_sheet.cell(row=row, column=col)
             new_cell = target_sheet.cell(row=row, column=col)
             new_cell.value = old_cell.value
-            new_cell.number_format = old_cell.number_format
+            new_cell.number_format = old_cell.number_format # copy old number format over
+
+def apply_data_validation(sheet, validation_range, source_range):
+    data_validation = DataValidation(
+        type="list",
+        formula1=source_range,
+        allow_blank=True,
+        showDropDown=False,
+        showErrorMessage=True
+    )
+    data_validation.add(validation_range)
+    sheet.add_data_validation(data_validation)
 
 @app.route('/upload', methods=['POST']) # creates endpoint for file upload
 def upload():
@@ -65,20 +76,11 @@ def upload():
 
         print('DEVNOTE applying data validation')
 
-        # Define the data validation rule
-        data_validation = DataValidation(
-            type="list",
-            formula1="'Data Validation'!$A$2:$A$99",  # Reference to the source range
-            allow_blank=True,
-            showDropDown=False,
-            showErrorMessage=True
+        apply_data_validation(
+            assets_sheet_new,
+            validation_range="$B$4:$B$99",
+            source_range="'Data Validation'!$A$2:$A$99" # todo define these and name each range
         )
-
-        # Add the data validation to the range B4:B99
-        data_validation.add("B4:B99")
-
-        # Apply the data validation to the new sheet
-        assets_sheet_new.add_data_validation(data_validation)
 
         print('DEVNOTE Assets data migrated successfully')
 
@@ -88,9 +90,10 @@ def upload():
 
         print('DEVNOTE output file saved')
 
+        #--DELIVER FILE--
+
         return send_file(output_path,
                          as_attachment=True,
-                         download_name='updated_template.xlsm',
                          mimetype='application/vnd.ms-excel.sheet.macroEnabled.12')
     
     except Exception as e:
