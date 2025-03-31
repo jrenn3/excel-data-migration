@@ -40,7 +40,7 @@ def apply_data_validation(sheet, validation_range, source_range):
     data_validation.add(validation_range)
     sheet.add_data_validation(data_validation)
 
-def migrate_sheet(old_workbook, new_workbook, target_sheet, start_row, end_row, start_col, end_col): #todo: add: , validation_range=None, source_range=None
+def migrate_sheet(old_workbook, new_workbook, target_sheet, start_row, end_row, start_col, end_col): #, validation_range=None, source_range=None
 
     ws_old = locate_sheet(old_workbook, target_sheet)
     ws_new = locate_sheet(new_workbook, target_sheet)
@@ -58,13 +58,8 @@ def migrate_sheet(old_workbook, new_workbook, target_sheet, start_row, end_row, 
                         
             new_cell.number_format = old_cell.number_format # copy old number format over
 
-    if target_sheet == 'Assets':
-        # Apply data validation for the Assets tab
-        apply_data_validation(
-            ws_new,
-            "$B$4:$B$99",
-            "'Data Validation'!$A$2:$A$99" # todo define these and name each range
-        )
+    # if validation_range and source_range:
+    #     apply_data_validation(ws_new, validation_range, source_range)
 
 
 @app.route('/upload', methods=['POST']) # creates endpoint for file upload
@@ -101,49 +96,34 @@ def upload():
     try:
         print('DEVNOTE transformation logic started')
 
-        #--ASSETS TAB--
-        migrate_sheet(wb_old, wb_new, 'Assets', 3, 99, 2, 5)        
-
-        #--CREDIT CARDS TAB--        
+        migrate_sheet(wb_old, wb_new, 'Assets', 3, 99, 2, 5) #, "$B$4:$B$99", "'Data Validation'!$A$2:$A$99")        
         migrate_sheet(wb_old, wb_new, 'Credit Cards', 3, 24, 2, 6)
-
-        #--LOANS TAB--
-        ws_old = locate_sheet(wb_old, 'Loans')
-        ws_new = locate_sheet(wb_new, 'Loans')
-        copy_data(ws_old, ws_new, 3, 99, 2, 3)
-
-        #--LOYALTY POINTS & MILES TAB--
-        ws_old = locate_sheet(wb_old, 'Loyalty Points & Miles')
-        ws_new = locate_sheet(wb_new, 'Loyalty Points & Miles')
-        copy_data(ws_old, ws_new, 3, 53, 2, 6)
+        migrate_sheet(wb_old, wb_new, 'Loans', 3, 99, 2, 3)
+        migrate_sheet(wb_old, wb_new, 'Loyalty Points & Miles', 3, 53, 2, 6)
+        migrate_sheet(wb_old, wb_new, 'Recurring', 3, 53, 2, 7) # map to new category names 
+        migrate_sheet(wb_old, wb_new, 'Precedents', 3, 99, 2, 5) #todo: data validation, map to new category names 
+        migrate_sheet(wb_old, wb_new, 'Changes', 3, 23, 2, 7) #todo: data validation, map to new category names 
+        migrate_sheet(wb_old, wb_new, 'Planned', 3, 24, 2, 6) #todo: data validation, map to new category names 
         
-        #--RECURRING TAB--
-        ws_old = locate_sheet(wb_old, 'Recurring')
-        ws_new = locate_sheet(wb_new, 'Recurring')
-        copy_data(ws_old, ws_new, 3, 53, 2, 7)
-        #todo: data validation
-
-        #--PRECEDENTS TAB--
-        ws_old = locate_sheet(wb_old, 'Precedents')
-        ws_new = locate_sheet(wb_new, 'Precedents')
-        copy_data(ws_old, ws_new, 3, 99, 2, 5)
-        #todo: data validation
-
-        #--CHANGES TAB--
-        ws_old = locate_sheet(wb_old, 'Changes')
-        ws_new = locate_sheet(wb_new, 'Changes')
-        copy_data(ws_old, ws_new, 3, 23, 2, 7)
-        #todo: data validation
-
-        #--PLANNED TAB--
-        ws_old = locate_sheet(wb_old, 'Planned')
-        ws_new = locate_sheet(wb_new, 'Planned')
-        copy_data(ws_old, ws_new, 3, 24, 2, 6)
-        #todo: data validation
-
+        apply_data_validation(wb_new['Assets'], "$B$4:$B$99", "'Data Validation'!$A$2:$A$99") #Assets validation
+        apply_data_validation(wb_new['Recurring'], "$B$4:$B$99", "'Data Validation'!$B$2:$B$99") #Line items validation
+        apply_data_validation(wb_new['Recurring'], "$E$4:$E$99", "'Data Validation'!$C$2:$C$99") #Recurrance base validation
+        apply_data_validation(wb_new['Precedents'], "$B$4:$B$99", "'Data Validation'!$B$2:$B$99") #Line items validation
+        apply_data_validation(wb_new['Precedents'], "$D$4:$D$99", "'Data Validation'!$B$2:$B$99") #Line items validation for Dependant-on column
+        apply_data_validation(wb_new['Changes'],  "$B$4:$B$99", "'Data Validation'!$B$2:$B$99") #Line items validation
+        apply_data_validation(wb_new['Changes'],  "$E$4:$E$99", "'Data Validation'!$C$2:$C$99") #Recurrance base validation
+        apply_data_validation(wb_new['Planned'],  "$B$4:$B$99", "'Data Validation'!$B$2:$B$99") #Line items validation
+        apply_data_validation(wb_new['Planned'],  "$D$4:$D$99", "'Data Validation'!$D$2:$D$99") #Account validation
         #--todo: BLANKET TAB--
 
         print('DEVNOTE data migrated successfully')
+
+        for sheet in wb_new.worksheets:
+            for row in sheet.iter_rows():
+                for cell in row:
+                    if isinstance(cell.value, str) and cell.value.startswith('=') and '{' in cell.value:
+                        # Remove curly brackets from the formula
+                        cell.value = cell.value.replace('{', '').replace('}', '')
 
         #--SAVE AND DELIVER FILE--
         output_path = tempfile.mktemp(suffix='.xlsm')
