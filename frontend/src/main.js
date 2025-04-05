@@ -11,7 +11,6 @@ uploadButton.addEventListener('click', () => {
 fileInput.addEventListener('change', (event) => { //trigger when file is selected
   const file = event.target.files[0]; // Get the selected file, 0 refers to the first file in the list
   if (file) {
-    console.log(`File selected: ${file.name}`);
     uploadFile(file); // Immediately upload after file selection 
   }
 });
@@ -23,13 +22,14 @@ function pollProgress(uploadId) {
     : 'https://excel-data-migration-backend.onrender.com/progress/'; // production server URL
 
   const interval = setInterval(() => {
-    console.log(`Progress url: ${serverUrl + uploadId}`);
     fetch(serverUrl + uploadId)
       .then((res) => res.json())
       .then((data) => {
         const percent = data.progress;
+        const message = data.message;
+
         document.getElementById('progressBar').style.width = `${percent}%`;
-        document.getElementById('progressText').textContent = `${percent}% complete...`;
+        document.getElementById('progressText').textContent = `${message} (${percent}%)`;
 
         if (percent >= 100) clearInterval(interval);
       });

@@ -72,36 +72,36 @@ def upload():
     print('DEVNOTE upload_id in /upload endpoint:', upload_id)
     progress_store[upload_id] = 0  # 0%
 
-    def update_progress(pct):
-        progress_store[upload_id] = pct
+    def update_progress(pct, message):
+        progress_store[upload_id] = {'progress': pct, 'message': message}
 
     #--LOAD WORKBOOK--
 
     #check if the file was sent correctly
     if 'file' not in request.files: # grabs file from the request via the key 'file'
-        update_progress(100)
+        update_progress(100, 'Error')
         return 'No file part', 400
 
     file = request.files['file']
     if file.filename == '':
-        update_progress(100)
+        update_progress(100, 'Error')
         return 'No selected file', 400
 
-    update_progress(10)  # File received
+    update_progress(10, 'Excel bot thanks you for the file...')  # File received
 
     # Save uploaded file temporarily
     with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsm') as tmp:
         file.save(tmp.name)
         uploaded_path = tmp.name
 
-    update_progress(30)  # File saved
+    update_progress(30, 'Interrogating the spreadsheet. It’s being coy...')  # File saved
 
     wb_old = load_workbook(uploaded_path)
     template_path = next((f for f in os.listdir('.') if f.endswith('.xlsm')), None) # loads the template file via extention search
     if not template_path:
         raise FileNotFoundError("No .xlsm template file found in the current directory.")
     
-    update_progress(50)  # Old file read
+    update_progress(50, 'Copying data like a caffeinated intern...')  # Old file read
     
     wb_new = load_workbook(template_path, keep_vba=True)
         
@@ -128,7 +128,7 @@ def upload():
         apply_data_validation(wb_new['Planned'],  "$D$4:$D$99", "'Data Validation'!$D$2:$D$99") #Account validation
         #--todo: BLANKET TAB--
 
-        update_progress(75)  # New file populated
+        update_progress(75, 'Data is flowing like coffee on a Monday...')  # New file populated
 
         for sheet in wb_new.worksheets:
             for row in sheet.iter_rows():
@@ -141,7 +141,7 @@ def upload():
         output_path = tempfile.mktemp(suffix='.xlsm')
         wb_new.save(output_path)
 
-        update_progress(100)  # Saved file
+        update_progress(100, 'Excel bot giving the model a pep talk...')  # Saved file
 
         response = make_response(send_file(output_path,
                                         as_attachment=True,
@@ -161,8 +161,8 @@ def upload():
 
 @app.route('/progress/<upload_id>', methods=['GET'])
 def progress(upload_id):
-    pct = progress_store.get(upload_id, 0)
-    return jsonify({'progress': pct})
+    info  = progress_store.get(upload_id, {'progress': 0, 'message': 'Waiting to start...'})
+    return jsonify(info)
 
 # --START SERVER--
 if __name__ == '__main__':
