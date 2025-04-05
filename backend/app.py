@@ -107,11 +107,7 @@ def migrate_adhoc(old_workbook, new_workbook):
 
 @app.route('/upload', methods=['POST']) # creates endpoint for file upload
 def upload():
-    print("UPLOAD route hit")
-    response = jsonify({"status": "upload started"})
-    response.headers["X-Debug"] = "CORS check"
-    return response
-    print("UPLOAD route hit #2")
+
     upload_id = request.form.get('upload_id') or str(uuid.uuid4())
     progress_store[upload_id] = 0  # 0%
 
