@@ -10,12 +10,12 @@ import uuid
 
 app = Flask(__name__)
 CORS(app
-    # , resources={r"/*": {"origins": "*"}}
-    , resources={r"/*": {"origins": [
-    "https://excel-data-migration.onrender.com"
-    ,"http://localhost:5173"
-    ,"https://excel-data-migration-frontend.onrender.com"
-    ,"https://excel-data-migration-backend.onrender.com"]}}
+    , resources={r"/*": {"origins": "*"}}
+    # , resources={r"/*": {"origins": [
+    # "https://excel-data-migration.onrender.com"
+    # ,"http://localhost:5173"
+    # ,"https://excel-data-migration-frontend.onrender.com"
+    # ,"https://excel-data-migration-backend.onrender.com"]}}
     )
 
 progress_store = {}
