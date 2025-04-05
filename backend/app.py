@@ -112,6 +112,10 @@ def migrate_adhoc(old_workbook, new_workbook):
         new_workbook._sheets.remove(ws_new)  # Temporarily remove the sheet
         new_workbook._sheets.insert(start_index_new + 1 + i, ws_new)  # Insert at the correct position
 
+@app.route('/') # creates endpoint for root URL
+def index():
+    return '✅ Excel backend is up and running!'
+
 @app.route('/upload', methods=['POST']) # creates endpoint for file upload
 def upload():
 
