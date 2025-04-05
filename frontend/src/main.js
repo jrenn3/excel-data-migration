@@ -16,9 +16,39 @@ fileInput.addEventListener('change', (event) => { //trigger when file is selecte
   }
 });
 
+function setStatus(message, showSpinner = false) {
+  const spinner = document.getElementById('spinner');
+  const statusMessage = document.getElementById('statusMessage');
+
+  statusMessage.textContent = message;
+  spinner.style.display = showSpinner ? 'inline-block' : 'none';
+}
+
+function pollProgress(uploadId) {
+  const serverUrl = 
+  window.location.hostname === 'localhost' // check if the app is running on localhost
+    ? 'http://localhost:5000/progress/' // local server URL
+    : 'https://excel-data-migration-backend.onrender.com/progress/'; // production server URL
+
+  const interval = setInterval(() => {
+    fetch(serverUrl + uploadId)
+      .then((res) => res.json())
+      .then((data) => {
+        const percent = data.progress;
+        document.getElementById('progressBar').style.width = `${percent}%`;
+        document.getElementById('progressText').textContent = `Progress: ${percent}%`;
+
+        if (percent >= 100) clearInterval(interval);
+      });
+  }, 500); // Check every 0.5 seconds
+}
+
 function uploadFile(file) {
   const formData = new FormData(); // browser API for handling form data
   formData.append('file', file); // builds request mimicing a form submission, with key 'file' and value as the file object
+
+  document.getElementById('progressBar').style.width = '0%';
+  document.getElementById('progressText').textContent = 'Uploading...';
 
   const serverUrl = 
     window.location.hostname === 'localhost' // check if the app is running on localhost
@@ -30,6 +60,11 @@ function uploadFile(file) {
     body: formData // represents the form data
   })
     .then(async (response) => {
+      const uploadId = response.headers.get('X-Upload-Id');
+      if (!uploadId) throw new Error('No upload ID received');
+
+      pollProgress(uploadId); // Start polling progress
+
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`Server error: ${errorText}`);
@@ -37,6 +72,7 @@ function uploadFile(file) {
       return response.blob(); // reads the binary content (like an Excel file)
     })
     .then((blob) => {
+      document.getElementById('progressText').textContent = 'Download ready!';
       // Create a download link
       const downloadUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -47,7 +83,7 @@ function uploadFile(file) {
       link.remove();
     })
     .catch((error) => {
+      document.getElementById('progressText').textContent = 'Upload failed: ' + error.message;
       console.error('Upload failed:', error.message);
-      alert('Upload failed: ' + error.message);
     });
 }

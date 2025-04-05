@@ -11,6 +11,12 @@
         <button id="uploadButton" type="button">Upload</button>
         <input id="fileInput" type="file" accept=".xlsm,.xlsx" style="display: none;" /> <!--pattern allows for easier styling, instead of trying to style input directly-->
       </div>
+      <div id="uploadStatus" style="margin-top: 20px;">
+        <div id="progressBarContainer" style="width: 100%; background: #eee; height: 20px; border-radius: 4px;">
+          <div id="progressBar" style="width: 0%; height: 100%; background: #4caf50; transition: width 0.3s;"></div>
+        </div>
+        <p id="progressText">Waiting to upload...</p>
+      </div>
     </div>
     <script type="module" src="/src/main.js"></script>
   </body>

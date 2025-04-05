@@ -1,13 +1,17 @@
 from flask import Flask, request, send_file, jsonify
+from flask_cors import CORS
 from openpyxl import load_workbook
 from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.worksheet.formula import ArrayFormula
 import tempfile
 import os
-from flask_cors import CORS
+import time
+import uuid
 
 app = Flask(__name__)
 CORS(app)
+
+progress_store = {}
 
 def locate_sheet(workbook, sheet_name):
     for sheet in workbook.worksheets:
@@ -64,33 +68,42 @@ def migrate_sheet(old_workbook, new_workbook, target_sheet, start_row, end_row, 
 
 @app.route('/upload', methods=['POST']) # creates endpoint for file upload
 def upload():
+    upload_id = str(uuid.uuid4())
+    progress_store[upload_id] = 0  # 0%
 
-    print('DEVNOTE endpoint hit')
+    def update_progress(pct):
+        progress_store[upload_id] = pct
 
     #--LOAD WORKBOOK--
 
     #check if the file was sent correctly
     if 'file' not in request.files: # grabs file from the request via the key 'file'
+        update_progress(100)
         return 'No file part', 400
 
     file = request.files['file']
     if file.filename == '':
+        update_progress(100)
         return 'No selected file', 400
+
+    update_progress(10)  # File received
 
     # Save uploaded file temporarily
     with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsm') as tmp:
         file.save(tmp.name)
         uploaded_path = tmp.name
 
+    update_progress(30)  # File saved
+
     wb_old = load_workbook(uploaded_path)
     template_path = next((f for f in os.listdir('.') if f.endswith('.xlsm')), None) # loads the template file via extention search
     if not template_path:
         raise FileNotFoundError("No .xlsm template file found in the current directory.")
     
+    update_progress(50)  # Old file read
+    
     wb_new = load_workbook(template_path, keep_vba=True)
         
-    print('DEVNOTE template loaded')
-
     #--MIGRATION LOGIC--
 
     try:
@@ -116,7 +129,7 @@ def upload():
         apply_data_validation(wb_new['Planned'],  "$D$4:$D$99", "'Data Validation'!$D$2:$D$99") #Account validation
         #--todo: BLANKET TAB--
 
-        print('DEVNOTE data migrated successfully')
+        update_progress(75)  # New file populated
 
         for sheet in wb_new.worksheets:
             for row in sheet.iter_rows():
@@ -129,13 +142,20 @@ def upload():
         output_path = tempfile.mktemp(suffix='.xlsm')
         wb_new.save(output_path)
 
-        print('DEVNOTE output file saved')
+        update_progress(95)  # Saved file
+
+        def send_file_with_cleanup():
+            yield from open(output_path, 'rb')
+            os.unlink(uploaded_path)
+            os.unlink(output_path)
+            update_progress(100)
 
         return send_file(output_path,
                          as_attachment=True,
                          mimetype='application/vnd.ms-excel.sheet.macroEnabled.12')
     
     except Exception as e:
+        update_progress(100)
         return f'Error processing file: {str(e)}', 500
     
     finally:
@@ -144,3 +164,8 @@ def upload():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))  # fallback to 5000 for local dev
     app.run(host='0.0.0.0', port=port)
+
+@app.route('/progress/<upload_id>', methods=['GET'])
+def progress(upload_id):
+    pct = progress_store.get(upload_id, 0)
+    return jsonify({'progress': pct})
