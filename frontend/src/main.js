@@ -9,20 +9,12 @@ uploadButton.addEventListener('click', () => {
 });
 
 fileInput.addEventListener('change', (event) => { //trigger when file is selected
-  const file = event.target.files[0]; // Get the selected file, 0 refres to the first file in the list
+  const file = event.target.files[0]; // Get the selected file, 0 refers to the first file in the list
   if (file) {
     console.log(`File selected: ${file.name}`);
     uploadFile(file); // Immediately upload after file selection 
   }
 });
-
-function setStatus(message, showSpinner = false) {
-  const spinner = document.getElementById('spinner');
-  const statusMessage = document.getElementById('statusMessage');
-
-  statusMessage.textContent = message;
-  spinner.style.display = showSpinner ? 'inline-block' : 'none';
-}
 
 function pollProgress(uploadId) {
   const serverUrl = 
@@ -31,12 +23,13 @@ function pollProgress(uploadId) {
     : 'https://excel-data-migration-backend.onrender.com/progress/'; // production server URL
 
   const interval = setInterval(() => {
+    console.log(`Progress url: ${serverUrl + uploadId}`);
     fetch(serverUrl + uploadId)
       .then((res) => res.json())
       .then((data) => {
         const percent = data.progress;
         document.getElementById('progressBar').style.width = `${percent}%`;
-        document.getElementById('progressText').textContent = `Progress: ${percent}%`;
+        document.getElementById('progressText').textContent = `${percent}% complete...`;
 
         if (percent >= 100) clearInterval(interval);
       });
@@ -46,6 +39,13 @@ function pollProgress(uploadId) {
 function uploadFile(file) {
   const formData = new FormData(); // browser API for handling form data
   formData.append('file', file); // builds request mimicing a form submission, with key 'file' and value as the file object
+
+  const uploadId = crypto.randomUUID();
+  formData.append('upload_id', uploadId);
+
+  pollProgress(uploadId); // Start polling progress
+      
+  if (!uploadId) throw new Error('No upload ID received');   
 
   document.getElementById('progressBar').style.width = '0%';
   document.getElementById('progressText').textContent = 'Uploading...';
@@ -60,11 +60,6 @@ function uploadFile(file) {
     body: formData // represents the form data
   })
     .then(async (response) => {
-      const uploadId = response.headers.get('X-Upload-Id');
-      if (!uploadId) throw new Error('No upload ID received');
-
-      pollProgress(uploadId); // Start polling progress
-
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`Server error: ${errorText}`);

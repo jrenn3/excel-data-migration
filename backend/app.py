@@ -1,4 +1,4 @@
-from flask import Flask, request, send_file, jsonify
+from flask import Flask, request, send_file, jsonify, make_response
 from flask_cors import CORS
 from openpyxl import load_workbook
 from openpyxl.worksheet.datavalidation import DataValidation
@@ -65,14 +65,14 @@ def migrate_sheet(old_workbook, new_workbook, target_sheet, start_row, end_row, 
     # if validation_range and source_range:
     #     apply_data_validation(ws_new, validation_range, source_range)
 
+def update_progress(pct):
+    progress_store[upload_id] = pct
 
 @app.route('/upload', methods=['POST']) # creates endpoint for file upload
 def upload():
-    upload_id = str(uuid.uuid4())
+    upload_id = request.form.get('upload_id') or str(uuid.uuid4())
+    print('DEVNOTE upload_id in /upload endpoint:', upload_id)
     progress_store[upload_id] = 0  # 0%
-
-    def update_progress(pct):
-        progress_store[upload_id] = pct
 
     #--LOAD WORKBOOK--
 
@@ -107,8 +107,6 @@ def upload():
     #--MIGRATION LOGIC--
 
     try:
-        print('DEVNOTE transformation logic started')
-
         migrate_sheet(wb_old, wb_new, 'Assets', 3, 99, 2, 5) #, "$B$4:$B$99", "'Data Validation'!$A$2:$A$99")        
         migrate_sheet(wb_old, wb_new, 'Credit Cards', 3, 24, 2, 6)
         migrate_sheet(wb_old, wb_new, 'Loans', 3, 99, 2, 3)
@@ -142,30 +140,30 @@ def upload():
         output_path = tempfile.mktemp(suffix='.xlsm')
         wb_new.save(output_path)
 
-        update_progress(95)  # Saved file
+        update_progress(100)  # Saved file
 
-        def send_file_with_cleanup():
-            yield from open(output_path, 'rb')
-            os.unlink(uploaded_path)
-            os.unlink(output_path)
-            update_progress(100)
-
-        return send_file(output_path,
-                         as_attachment=True,
-                         mimetype='application/vnd.ms-excel.sheet.macroEnabled.12')
+        response = make_response(send_file(output_path,
+                                        as_attachment=True,
+                                        mimetype='application/vnd.ms-excel.sheet.macroEnabled.12'))
+        response.headers['X-Upload-Id'] = upload_id
+        return response
     
     except Exception as e:
         update_progress(100)
-        return f'Error processing file: {str(e)}', 500
+        response = jsonify({'error': str(e)})
+        response.headers['X-Upload-Id'] = upload_id
+        return response, 500
     
     finally:
         os.unlink(uploaded_path)
-
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))  # fallback to 5000 for local dev
-    app.run(host='0.0.0.0', port=port)
+        # os.unlink(output_path)
 
 @app.route('/progress/<upload_id>', methods=['GET'])
 def progress(upload_id):
     pct = progress_store.get(upload_id, 0)
     return jsonify({'progress': pct})
+
+# --START SERVER--
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))  # fallback to 5000 for local dev
+    app.run(host='0.0.0.0', port=port)
