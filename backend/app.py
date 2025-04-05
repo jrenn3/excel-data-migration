@@ -9,7 +9,7 @@ import time
 import uuid
 
 app = Flask(__name__)
-CORS(app, supports_credentials=True)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 progress_store = {}
 
