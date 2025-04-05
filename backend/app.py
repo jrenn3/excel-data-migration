@@ -46,6 +46,15 @@ def apply_data_validation(sheet, validation_range, source_range):
 
 def migrate_inputs(old_workbook, new_workbook, target_sheet, start_row, end_row, start_col, end_col): #, validation_range=None, source_range=None
 
+    # Define the mapping for value replacements
+    value_mapping = {
+        "Salary": "Salary & Paychecks",
+        "Health": "Health & Personal Care",
+        "Travel & Events": "Events & Entertainment",
+        "Wishlist": "Shopping",
+        "Dues & Memberships": "Dues & Subscriptions"
+    }
+
     ws_old = locate_sheet(old_workbook, target_sheet)
     ws_new = locate_sheet(new_workbook, target_sheet)
 
@@ -58,7 +67,7 @@ def migrate_inputs(old_workbook, new_workbook, target_sheet, start_row, end_row,
             if isinstance(old_cell.value, ArrayFormula) and old_cell.value.text == '=EndDayOfCurrentMonth':
                 new_cell.value = '=EndOfCurrentMonth'
             else:
-                new_cell.value = old_cell.value
+                new_cell.value = value_mapping.get(old_cell.value, old_cell.value)
                         
             new_cell.number_format = old_cell.number_format # copy old number format over
 
