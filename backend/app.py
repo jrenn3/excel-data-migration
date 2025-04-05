@@ -65,14 +65,15 @@ def migrate_sheet(old_workbook, new_workbook, target_sheet, start_row, end_row, 
     # if validation_range and source_range:
     #     apply_data_validation(ws_new, validation_range, source_range)
 
-def update_progress(pct):
-    progress_store[upload_id] = pct
 
 @app.route('/upload', methods=['POST']) # creates endpoint for file upload
 def upload():
     upload_id = request.form.get('upload_id') or str(uuid.uuid4())
     print('DEVNOTE upload_id in /upload endpoint:', upload_id)
     progress_store[upload_id] = 0  # 0%
+
+    def update_progress(pct):
+        progress_store[upload_id] = pct
 
     #--LOAD WORKBOOK--
 
