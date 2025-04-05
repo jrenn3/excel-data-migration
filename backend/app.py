@@ -87,14 +87,12 @@ def upload():
         update_progress(100, 'Error')
         return 'No selected file', 400
 
-    update_progress(10, 'Excel bot thanks you for the file...')  # File received
-
     # Save uploaded file temporarily
     with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsm') as tmp:
         file.save(tmp.name)
         uploaded_path = tmp.name
 
-    update_progress(30, 'Interrogating the spreadsheet. It’s being coy...')  # File saved
+    update_progress(30, 'Excel bot pouring coffee...')  # File saved
 
     wb_old = load_workbook(uploaded_path)
     template_path = next((f for f in os.listdir('.') if f.endswith('.xlsm')), None) # loads the template file via extention search
