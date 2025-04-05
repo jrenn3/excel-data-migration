@@ -128,7 +128,7 @@ def upload():
         apply_data_validation(wb_new['Planned'],  "$D$4:$D$99", "'Data Validation'!$D$2:$D$99") #Account validation
         #--todo: BLANKET TAB--
 
-        update_progress(75, 'Data is flowing like coffee on a Monday...')  # New file populated
+        update_progress(75, 'Data flowing like coffee on Monday...')  # New file populated
 
         for sheet in wb_new.worksheets:
             for row in sheet.iter_rows():
