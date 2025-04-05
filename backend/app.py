@@ -145,15 +145,16 @@ def upload():
     #--MIGRATION LOGIC--
 
     try:
+        migrate_inputs(wb_old, wb_new, 'Archive', 6, 9999, 3, 9) 
         migrate_inputs(wb_old, wb_new, 'Assets', 3, 99, 2, 5) 
         migrate_inputs(wb_old, wb_new, 'Credit Cards', 3, 24, 2, 6)
         migrate_inputs(wb_old, wb_new, 'Loans', 3, 99, 2, 3)
         migrate_inputs(wb_old, wb_new, 'Loyalty Points & Miles', 3, 53, 2, 6)
-        migrate_inputs(wb_old, wb_new, 'Recurring', 3, 53, 2, 7) #todo: map to new category names 
-        migrate_inputs(wb_old, wb_new, 'Precedents', 3, 99, 2, 5) #todo: map to new category names 
-        migrate_inputs(wb_old, wb_new, 'Changes', 3, 23, 2, 7) #todo: map to new category names 
-        migrate_inputs(wb_old, wb_new, 'Planned', 3, 24, 2, 6) #todo: map to new category names 
-        migrate_inputs(wb_old, wb_new, 'Blanket', 2, 9, 3, 3) #todo: map to new category names 
+        migrate_inputs(wb_old, wb_new, 'Recurring', 3, 53, 2, 7) 
+        migrate_inputs(wb_old, wb_new, 'Precedents', 3, 99, 2, 5) 
+        migrate_inputs(wb_old, wb_new, 'Changes', 3, 23, 2, 7) 
+        migrate_inputs(wb_old, wb_new, 'Planned', 3, 24, 2, 6) 
+        migrate_inputs(wb_old, wb_new, 'Blanket', 2, 9, 3, 3) 
         
         apply_data_validation(wb_new['Assets'], "$B$4:$B$99", "'Data Validation'!$A$2:$A$99") #Assets validation
         apply_data_validation(wb_new['Recurring'], "$B$4:$B$99", "'Data Validation'!$B$2:$B$99") #Line items validation
