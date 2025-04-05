@@ -9,11 +9,14 @@ import time
 import uuid
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": [
+CORS(app
+    # , resources={r"/*": {"origins": "*"}}
+    , resources={r"/*": {"origins": [
     "https://excel-data-migration.onrender.com"
-    ,"http://localhost:5000"
+    ,"http://localhost:5173"
     ,"https://excel-data-migration-frontend.onrender.com"
-    ,"https://excel-data-migration-backend.onrender.com"]}})
+    ,"https://excel-data-migration-backend.onrender.com"]}}
+    )
 
 progress_store = {}
 
@@ -195,6 +198,7 @@ def upload():
     
     except Exception as e:
         update_progress(100, "Error")
+        app.logger.error(f"Error during upload: {str(e)}")  # Log the error
         response = jsonify({'error': str(e)})
         response.headers['X-Upload-Id'] = upload_id
         return response, 500
