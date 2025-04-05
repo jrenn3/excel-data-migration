@@ -9,7 +9,7 @@ import time
 import uuid
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})
+CORS(app, origins=["https://excel-data-migration.onrender.com"])
 
 progress_store = {}
 
